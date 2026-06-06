@@ -1,5 +1,6 @@
 import QuestionsList from "./questions-list";
 import { getQuestionsPage } from "@/lib/questions";
+import TabsWrapper from "@/components/TabsWrapper";
 
 // Render on every request (don't cache/prerender) so new questions show up.
 export const dynamic = "force-dynamic";
@@ -13,16 +14,18 @@ export default async function Page() {
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:py-14">
       <header className="mb-7">
-        <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand">
-          <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+        <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1 text-xs font-medium text-gold">
+          <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />
           Live now
         </span>
-        <h1 className="text-3xl font-semibold tracking-tight">Live Q&amp;A</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">IPL Fan Zone</h1>
         <p className="mt-1.5 text-sm text-muted">
-          Ask a question, upvote the ones you want answered.
+          Ask questions, vote on polls, and join the conversation.
         </p>
       </header>
-      <QuestionsList initialQuestions={questions} initialHasMore={hasMore} />
+      <TabsWrapper>
+        <QuestionsList initialQuestions={questions} initialHasMore={hasMore} />
+      </TabsWrapper>
     </main>
   );
 }
