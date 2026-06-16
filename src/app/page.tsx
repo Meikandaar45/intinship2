@@ -9,7 +9,17 @@ const PAGE_SIZE = 10;
 
 // Server component — runs only on the server, awaits the data, renders to HTML.
 export default async function Page() {
-  const { questions, hasMore } = await getQuestionsPage(0, PAGE_SIZE);
+  let questions: { id: string; body: string; author: string; votes: number }[] = [];
+  let hasMore = false;
+
+  try {
+    const result = await getQuestionsPage(0, PAGE_SIZE);
+    questions = result.questions;
+    hasMore = result.hasMore;
+  } catch (err) {
+    console.error("[Page] Failed to load questions:", err);
+    // Page will render with empty questions — the UI handles this gracefully
+  }
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:py-14">

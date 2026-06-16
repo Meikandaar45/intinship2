@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -36,13 +36,20 @@ export interface PollResults {
  * Fetch all active polls with their options and vote counts.
  */
 export async function getActivePolls(): Promise<Poll[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("polls")
     .select("*, poll_options(*)")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(`Failed to fetch active polls: ${error.message}`);
+  if (error) {
+    console.error("[getActivePolls]", error.message);
+    return [];
+  }
   return data as Poll[];
 }
 
@@ -50,6 +57,8 @@ export async function getActivePolls(): Promise<Poll[]> {
  * Fetch a single poll by ID with its options.
  */
 export async function getPollById(id: string): Promise<Poll | null> {
+  if (!isSupabaseConfigured()) return null;
+
   const { data, error } = await supabase
     .from("polls")
     .select("*, poll_options(*)")
@@ -71,6 +80,10 @@ export async function createPoll(
   options: string[],
   createdBy?: string
 ): Promise<Poll> {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Database is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.");
+  }
+
   // 1. Insert the poll row
   const { data: poll, error: pollError } = await supabase
     .from("polls")
@@ -105,6 +118,10 @@ export async function votePoll(
   optionId: string,
   voterId: string
 ): Promise<PollResults> {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Database is not configured.");
+  }
+
   // 1. Insert into poll_votes (unique constraint catches duplicates)
   const { error: voteError } = await supabase
     .from("poll_votes")
@@ -143,6 +160,10 @@ export async function votePoll(
  * Get poll results: options with vote counts and percentages.
  */
 export async function getPollResults(pollId: string): Promise<PollResults> {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Database is not configured.");
+  }
+
   const { data: poll, error: pollErr } = await supabase
     .from("polls")
     .select("id, question")

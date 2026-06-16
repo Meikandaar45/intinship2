@@ -9,7 +9,9 @@ export async function GET() {
     return Response.json({ polls });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return Response.json({ error: message }, { status: 500 });
+    console.error("[API /polls GET]", message);
+    // Return empty polls array instead of 500 so the UI renders gracefully
+    return Response.json({ polls: [], error: message }, { status: 200 });
   }
 }
 
@@ -51,6 +53,7 @@ export async function POST(req: Request) {
     return Response.json({ poll }, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[API /polls POST]", message);
     return Response.json({ error: message }, { status: 500 });
   }
 }
