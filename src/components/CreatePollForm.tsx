@@ -68,14 +68,15 @@ export default function CreatePollForm({
       });
 
       if (!res.ok) {
-        throw new Error("Failed to create poll");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to create poll");
       }
 
       setQuestion("");
       setOptions(["", ""]);
       onCreated();
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

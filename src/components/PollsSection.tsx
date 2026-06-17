@@ -10,14 +10,19 @@ export default function PollsSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPolls = useCallback(async () => {
+    setError(null);
     try {
       const res = await fetch("/api/polls");
       const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+      }
       setPolls(data.polls ?? []);
-    } catch {
-      // silently fail — UI will show empty state
+    } catch (err: any) {
+      setError(err.message || "Failed to load polls.");
     }
   }, []);
 
@@ -108,8 +113,16 @@ export default function PollsSection() {
         </div>
       )}
 
+      {/* Error State */}
+      {error && !isLoading && (
+        <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400 poll-animate-in">
+          <p className="font-semibold mb-1">Database Error</p>
+          <p className="opacity-90">{error}</p>
+        </div>
+      )}
+
       {/* Polls List */}
-      {!isLoading && polls.length > 0 && (
+      {!isLoading && !error && polls.length > 0 && (
         <div className="space-y-4">
           {polls.map((poll, idx) => (
             <div
