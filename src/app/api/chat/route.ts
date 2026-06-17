@@ -40,13 +40,8 @@ export async function POST(req: Request) {
     const { message } = await req.json();
     const query = (message || "").toLowerCase().trim();
 
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    // If API key is missing, fall back to our hardcoded records
-    if (!apiKey) {
-      const fallback = getFallbackResponse(query);
-      return Response.json(fallback);
-    }
+    // Use environment variable if present, otherwise use the provided key
+    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyBO0EE465yBSGfEbiawU2QAby3PKZyuv5g";
 
     // Initialize Gemini AI
     const ai = new GoogleGenAI({ apiKey });

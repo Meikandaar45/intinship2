@@ -16,11 +16,11 @@ export type Poll = {
   created_by: string | null;
   created_at: string;
   is_active: boolean;
-  options: PollOption[];
+  poll_options: PollOption[];
 };
 
 export default function PollCard({ poll }: { poll: Poll }) {
-  const [options, setOptions] = useState<PollOption[]>(poll.options);
+  const [options, setOptions] = useState<PollOption[]>(poll.poll_options || []);
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [isVoting, setIsVoting] = useState(false);
@@ -36,14 +36,14 @@ export default function PollCard({ poll }: { poll: Poll }) {
       setSelectedOptionId(votedOption);
       setShowResults(true);
       // Calculate totals for already-voted state
-      const total = poll.options.reduce((s, o) => s + o.vote_count, 0);
+      const total = (poll.poll_options || []).reduce((s, o) => s + o.vote_count, 0);
       setTotalVotes(total);
       // Animate bars after a short delay
       requestAnimationFrame(() => {
         setTimeout(() => setAnimateResults(true), 50);
       });
     }
-  }, [poll.id, poll.options]);
+  }, [poll.id, poll.poll_options]);
 
   const getPercentage = useCallback(
     (voteCount: number) => {
