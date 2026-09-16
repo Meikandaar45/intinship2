@@ -32,25 +32,45 @@ export interface PollResults {
 
 // ── Queries ──────────────────────────────────────────────────
 
+const FALLBACK_POLLS: Poll[] = [
+  {
+    id: "mock-poll-1",
+    question: "Who is the GOAT of IPL?",
+    created_by: "Admin",
+    created_at: new Date().toISOString(),
+    expires_at: null,
+    is_active: true,
+    poll_options: [
+      { id: "opt-1", poll_id: "mock-poll-1", option_text: "MS Dhoni", vote_count: 120 },
+      { id: "opt-2", poll_id: "mock-poll-1", option_text: "Virat Kohli", vote_count: 110 },
+      { id: "opt-3", poll_id: "mock-poll-1", option_text: "Rohit Sharma", vote_count: 95 },
+    ],
+  },
+];
+
 /**
  * Fetch all active polls with their options and vote counts.
  */
 export async function getActivePolls(): Promise<Poll[]> {
-  if (!isSupabaseConfigured()) {
-    return [];
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from("polls")
+        .select("*, poll_options(*)")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        return data as Poll[];
+      }
+      console.error("[getActivePolls]", error?.message);
+    } catch (err) {
+      console.error("[getActivePolls] exception:", err);
+    }
   }
 
-  const { data, error } = await supabase
-    .from("polls")
-    .select("*, poll_options(*)")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("[getActivePolls]", error.message);
-    return [];
-  }
-  return data as Poll[];
+  // Fallback to mock data if the database is unreachable
+  return FALLBACK_POLLS;
 }
 
 /**

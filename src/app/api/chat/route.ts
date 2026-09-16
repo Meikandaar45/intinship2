@@ -40,8 +40,14 @@ export async function POST(req: Request) {
     const { message } = await req.json();
     const query = (message || "").toLowerCase().trim();
 
-    // Use environment variable if present, otherwise use the provided key
-    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyBO0EE465yBSGfEbiawU2QAby3PKZyuv5g";
+    // Use environment variable if present
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    // If API key is missing, fall back to our hardcoded records
+    if (!apiKey) {
+      const fallback = getFallbackResponse(query);
+      return Response.json(fallback);
+    }
 
     // Initialize Gemini AI
     const ai = new GoogleGenAI({ apiKey });
@@ -65,6 +71,11 @@ Respond directly to this user's message: "${message}"`;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[API /chat POST]", message);
-    return Response.json({ error: message }, { status: 500 });
+    
+    // Instead of throwing a 500 error which breaks the UI, return a graceful fallback message
+    return Response.json({
+      reply: "My AI connection seems to be down at the moment (possibly an invalid API key). Please check your Gemini API key in Vercel settings, or try asking me a basic IPL record question!",
+      thought: `Error encountered: ${message}. Falling back to error message.`
+    });
   }
 }

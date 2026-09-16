@@ -47,15 +47,23 @@ export default function QuestionsList({
   async function submit() {
     if (!draft.trim()) return;
 
-    const res = await fetch("/api/questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: draft }),
-    });
-    const created = await res.json();
-
-    setQuestions((qs) => [{ ...created, votes: 0 }, ...qs]);
-    setDraft("");
+    try {
+      const res = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: draft }),
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to post question");
+      }
+      
+      const created = await res.json();
+      setQuestions((qs) => [{ ...created, votes: 0 }, ...qs]);
+      setDraft("");
+    } catch (err) {
+      alert("Failed to submit question. The server might be down.");
+    }
   }
 
   async function upvote(id: string) {
