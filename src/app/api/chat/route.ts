@@ -36,9 +36,10 @@ function getFallbackResponse(query: string) {
 }
 
 export async function POST(req: Request) {
+  let query = "";
   try {
     const { message } = await req.json();
-    const query = (message || "").toLowerCase().trim();
+    query = (message || "").toLowerCase().trim();
 
     // Use environment variable if present
     const apiKey = process.env.GEMINI_API_KEY;
@@ -72,10 +73,9 @@ Respond directly to this user's message: "${message}"`;
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[API /chat POST]", message);
     
-    // Instead of throwing a 500 error which breaks the UI, return a graceful fallback message
-    return Response.json({
-      reply: "My AI connection seems to be down at the moment (possibly an invalid API key). Please check your Gemini API key in Vercel settings, or try asking me a basic IPL record question!",
-      thought: `Error encountered: ${message}. Falling back to error message.`
-    });
+    // The API key might be leaked/invalid, or Google is down. 
+    // Fall back to the hardcoded answers so the app still functions!
+    const fallback = getFallbackResponse(query);
+    return Response.json(fallback);
   }
 }
