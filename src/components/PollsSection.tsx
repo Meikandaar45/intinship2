@@ -31,6 +31,17 @@ export default function PollsSection() {
     fetchPolls().finally(() => setIsLoading(false));
   }, [fetchPolls]);
 
+  // Realtime live updates: automatically refresh polls every 4 seconds without manual refresh
+  useEffect(() => {
+    if (showCreateForm) return; // pause auto-poll while creating
+
+    const interval = setInterval(() => {
+      fetchPolls();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [showCreateForm, fetchPolls]);
+
   async function handleRefresh() {
     setIsRefreshing(true);
     await fetchPolls();
@@ -46,30 +57,37 @@ export default function PollsSection() {
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => setShowCreateForm((v) => !v)}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 ${
-            showCreateForm
-              ? "bg-white/5 text-muted border border-border hover:text-foreground"
-              : "bg-gradient-to-r from-gold to-orange text-background hover:shadow-lg hover:shadow-gold/20 active:scale-[0.97]"
-          }`}
-        >
-          {showCreateForm ? (
-            <>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Close
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              New Poll
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCreateForm((v) => !v)}
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 ${
+              showCreateForm
+                ? "bg-white/5 text-muted border border-border hover:text-foreground"
+                : "bg-gradient-to-r from-gold to-orange text-background hover:shadow-lg hover:shadow-gold/20 active:scale-[0.97]"
+            }`}
+          >
+            {showCreateForm ? (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Close
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                New Poll
+              </>
+            )}
+          </button>
+
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Live Realtime
+          </span>
+        </div>
 
         <button
           onClick={handleRefresh}

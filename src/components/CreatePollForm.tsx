@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { getStoredUser } from "@/lib/auth";
 
 type CreatePollFormProps = {
   onCreated: () => void;
@@ -57,6 +58,9 @@ export default function CreatePollForm({
 
     setIsSubmitting(true);
 
+    const user = getStoredUser();
+    const createdBy = user ? (user.name || user.email) : "IPL Fan";
+
     try {
       const res = await fetch("/api/polls", {
         method: "POST",
@@ -64,6 +68,7 @@ export default function CreatePollForm({
         body: JSON.stringify({
           question: trimmedQuestion,
           options: trimmedOptions,
+          createdBy,
         }),
       });
 

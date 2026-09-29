@@ -1,6 +1,8 @@
- "use client";
+"use client";
+
 import { useState, useEffect } from "react";
 import { getVoterId } from "@/lib/voter";
+import { getStoredUser } from "@/lib/auth";
 
 type Question = {
   id: string;
@@ -28,8 +30,7 @@ export default function QuestionsList({
     setHydrated(true);
   }, []);
 
-  // Debounced search: wait 300ms after typing stops; each keystroke cancels
-  // the previous timer, so "deploying" fires one request, not nine.
+  // Debounced search: wait 300ms after typing stops
   useEffect(() => {
     const id = setTimeout(async () => {
       const url = query
@@ -37,21 +38,52 @@ export default function QuestionsList({
         : `/api/questions`;
       const res = await fetch(url);
       const data = await res.json();
-      setQuestions(data.questions);
-      setHasMore(data.hasMore);
+      if (data.questions) {
+        setQuestions(data.questions);
+        setHasMore(data.hasMore);
+      }
     }, 300);
 
-    return () => clearTimeout(id); // cancel the pending timer on each keystroke
+    return () => clearTimeout(id);
+  }, [query]);
+
+  // Live real-time update: poll for fresh vote counts every 5 seconds if not searching
+  useEffect(() => {
+    if (query.trim()) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/questions");
+        const data = await res.json();
+        if (data.questions && data.questions.length > 0) {
+          setQuestions((prev) => {
+            // merge updated vote counts
+            const map = new Map(data.questions.map((q: Question) => [q.id, q]));
+            return prev.map((oldQ) => {
+              const fresh = map.get(oldQ.id) as Question | undefined;
+              return fresh ? { ...oldQ, votes: fresh.votes } : oldQ;
+            });
+          });
+        }
+      } catch {
+        // silent fallback
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [query]);
 
   async function submit() {
     if (!draft.trim()) return;
 
+    const user = getStoredUser();
+    const author = user ? (user.name || user.email) : "Anonymous Fan";
+
     try {
       const res = await fetch("/api/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: draft }),
+        body: JSON.stringify({ body: draft, author }),
       });
       
       if (!res.ok) {
@@ -61,12 +93,15 @@ export default function QuestionsList({
       const created = await res.json();
       setQuestions((qs) => [{ ...created, votes: 0 }, ...qs]);
       setDraft("");
-    } catch (err) {
+    } catch {
       alert("Failed to submit question. The server might be down.");
     }
   }
 
   async function upvote(id: string) {
+    const user = getStoredUser();
+    const voterId = user?.id || getVoterId();
+
     // optimistic: assume success, update the UI now
     setQuestions((qs) =>
       qs.map((q) => (q.id === id ? { ...q, votes: q.votes + 1 } : q))
@@ -75,7 +110,7 @@ export default function QuestionsList({
     const res = await fetch(`/api/questions/${id}/vote`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ voterId: getVoterId() }),
+      body: JSON.stringify({ voterId }),
     });
 
     // server said no (already voted) — roll back

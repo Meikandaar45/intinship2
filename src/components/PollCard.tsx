@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getVoterId } from "@/lib/voter";
+import { getStoredUser } from "@/lib/auth";
 
 export type PollOption = {
   id: string;
@@ -28,6 +29,15 @@ export default function PollCard({ poll }: { poll: Poll }) {
   const [totalVotes, setTotalVotes] = useState(0);
   const [animateResults, setAnimateResults] = useState(false);
 
+  // Sync options when parent poll updates via live updates
+  useEffect(() => {
+    if (poll.poll_options && poll.poll_options.length > 0) {
+      setOptions(poll.poll_options);
+      const total = poll.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0);
+      setTotalVotes(total);
+    }
+  }, [poll.poll_options]);
+
   // Check if already voted on mount
   useEffect(() => {
     const votedOption = localStorage.getItem(`poll_voted_${poll.id}`);
@@ -35,10 +45,8 @@ export default function PollCard({ poll }: { poll: Poll }) {
       setHasVoted(true);
       setSelectedOptionId(votedOption);
       setShowResults(true);
-      // Calculate totals for already-voted state
-      const total = (poll.poll_options || []).reduce((s, o) => s + o.vote_count, 0);
+      const total = (poll.poll_options || []).reduce((s, o) => s + (o.vote_count || 0), 0);
       setTotalVotes(total);
-      // Animate bars after a short delay
       requestAnimationFrame(() => {
         setTimeout(() => setAnimateResults(true), 50);
       });
@@ -59,19 +67,24 @@ export default function PollCard({ poll }: { poll: Poll }) {
     setIsVoting(true);
     setSelectedOptionId(optionId);
 
+    const user = getStoredUser();
+    const voterId = user?.id || getVoterId();
+
     try {
       const res = await fetch(`/api/polls/${poll.id}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optionId, voterId: getVoterId() }),
+        body: JSON.stringify({ optionId, voterId }),
       });
 
       if (res.status === 409) {
         // Already voted — fetch results
         const resultsRes = await fetch(`/api/polls/${poll.id}/results`);
         const resultsData = await resultsRes.json();
-        setOptions(resultsData.options);
-        setTotalVotes(resultsData.totalVotes);
+        const rawOpts: PollOption[] = resultsData.results?.options || resultsData.options || [];
+        setOptions(rawOpts);
+        const total = resultsData.results?.total_votes ?? resultsData.totalVotes ?? rawOpts.reduce((s: number, o: any) => s + (o.vote_count || 0), 0);
+        setTotalVotes(total);
         localStorage.setItem(`poll_voted_${poll.id}`, optionId);
         setHasVoted(true);
         setShowResults(true);
@@ -81,9 +94,9 @@ export default function PollCard({ poll }: { poll: Poll }) {
 
       if (res.ok) {
         const data = await res.json();
-        const updatedOptions: PollOption[] = data.results;
-        setOptions(updatedOptions);
-        const total = updatedOptions.reduce((s, o) => s + o.vote_count, 0);
+        const rawOpts: PollOption[] = data.results?.options || (Array.isArray(data.results) ? data.results : options);
+        setOptions(rawOpts);
+        const total = data.results?.total_votes ?? rawOpts.reduce((s: number, o: any) => s + (o.vote_count || 0), 0);
         setTotalVotes(total);
         localStorage.setItem(`poll_voted_${poll.id}`, optionId);
         setHasVoted(true);

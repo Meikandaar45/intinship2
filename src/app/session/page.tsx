@@ -1,6 +1,7 @@
 import QuestionsList from "../questions-list";
 import { getQuestionsPage } from "@/lib/questions";
 import TabsWrapper from "@/components/TabsWrapper";
+import UserHeader from "@/components/UserHeader";
 
 // Render on every request (don't cache/prerender) so new questions show up.
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ export default async function SessionPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:py-14">
+      <UserHeader />
       <header className="mb-7">
         <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1 text-xs font-medium text-gold">
           <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />

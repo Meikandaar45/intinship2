@@ -1,4 +1,5 @@
 import Link from "next/link";
+import UserHeader from "@/components/UserHeader";
 
 export default function LandingPage() {
   return (
@@ -7,6 +8,7 @@ export default function LandingPage() {
       <div className="absolute inset-0 z-0 bg-stadium-glow pointer-events-none" />
       
       <div className="relative z-10 mx-auto w-full max-w-3xl text-center">
+        <UserHeader />
         {/* Badge */}
         <div className="mb-6 inline-flex animate-fade-in items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-semibold text-gold shadow-[0_0_15px_rgba(251,191,36,0.2)]">
           <span className="relative flex h-2 w-2">
